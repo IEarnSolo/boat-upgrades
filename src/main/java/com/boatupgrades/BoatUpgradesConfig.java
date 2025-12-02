@@ -15,7 +15,7 @@ public interface BoatUpgradesConfig extends Config
 	)
 	default int persistMinutes()
 	{
-		return 20;
+		return 10;
 	}
 
 	@ConfigItem(
