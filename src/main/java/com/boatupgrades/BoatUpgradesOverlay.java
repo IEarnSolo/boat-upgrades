@@ -44,7 +44,6 @@ public class BoatUpgradesOverlay extends Overlay
         this.client = client;
         this.config = config;
         setPosition(OverlayPosition.TOP_LEFT);
-        setLayer(OverlayLayer.ABOVE_WIDGETS);
     }
 
     @Override

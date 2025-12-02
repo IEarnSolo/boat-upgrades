@@ -102,6 +102,40 @@ public class BoatUpgradesPlugin extends Plugin
 				log.warn("Failed to copy hotspot varbits to clipboard", ex);
 			}
 		}
+
+		if (event.getCommand().equalsIgnoreCase("setvar") || event.getCommand().equalsIgnoreCase("setvarbit"))
+		{
+			String[] parts = event.getArguments();
+
+			if (parts.length < 2)
+			{
+				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Usage: ::setvar <varbitId> <value>", null);
+				return;
+			}
+
+			Integer varbitId = Ints.tryParse(parts[0]);
+			Integer value = Ints.tryParse(parts[1]);
+
+			if (varbitId == null || value == null)
+			{
+				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Invalid arguments. Both varbitId and value must be integers.", null);
+				return;
+			}
+
+			try
+			{
+				client.setVarbit(varbitId, value);
+
+				String msg = "setvar: varbit " + varbitId + " => " + value + " (client-side)";
+				log.info(msg);
+				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", msg, null);
+			}
+			catch (Throwable ex)
+			{
+				log.warn("setvar failed for {} -> {}", varbitId, value, ex);
+				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "setvar failed for " + varbitId + " -> " + value, null);
+			}
+		}
 	}
 
 	@Subscribe

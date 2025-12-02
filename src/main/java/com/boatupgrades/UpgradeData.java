@@ -51,19 +51,15 @@ public final class UpgradeData
 
     static
     {
-        // Wooden base (raft)
+        // Wooden base/hull (tier 0)
         OPTIONS.add(new UpgradeOption("Base", 0, 0, 1, "Wooden base (raft)",
                 Arrays.asList(new Material("Logs",10), new Material("Rope",6), new Material("Swamp tar",10))));
-
-        // Wooden hull (skiff)
         OPTIONS.add(new UpgradeOption("Hull", 1, 0, 1, "Wooden hull (skiff)",
                 Arrays.asList(new Material("Wooden hull parts",10), new Material("Bronze nails",300), new Material("Swamp tar",20))));
-
-        // Wooden hull (sloop)
         OPTIONS.add(new UpgradeOption("Hull", 2, 0, 1, "Wooden hull (sloop)",
                 Arrays.asList(new Material("Large wooden hull parts",16), new Material("Bronze nails",600), new Material("Swamp tar",25))));
 
-        // Bronze helm
+        // Bronze helm (tier 0)
         OPTIONS.add(new UpgradeOption("Helm", 0, 0, 1, "Bronze helm (raft)",
                 Arrays.asList(new Material("Plank",2), new Material("Bronze bar",4))));
         OPTIONS.add(new UpgradeOption("Helm", 1, 0, 1, "Bronze helm (skiff)",
@@ -71,7 +67,7 @@ public final class UpgradeData
         OPTIONS.add(new UpgradeOption("Helm", 2, 0, 1, "Bronze helm (sloop)",
                 Arrays.asList(new Material("Plank",4), new Material("Bronze bar",8))));
 
-        // Wooden mast and linen sails
+        // Wooden sails (tier 0)
         OPTIONS.add(new UpgradeOption("Sails", 0, 0, 1, "Wooden mast & linen sails (raft)",
                 Arrays.asList(new Material("Logs",5), new Material("Bronze nails",20), new Material("Bolt of linen",5))));
         OPTIONS.add(new UpgradeOption("Sails", 1, 0, 1, "Wooden mast & linen sails (skiff)",
@@ -79,13 +75,13 @@ public final class UpgradeData
         OPTIONS.add(new UpgradeOption("Sails", 2, 0, 1, "Wooden mast & linen sails (sloop)",
                 Arrays.asList(new Material("Logs",15), new Material("Bronze nails",60), new Material("Bolt of linen",10))));
 
-        // Bronze keel (skiff/sloop)
+        // Bronze keel (tier 0)
         OPTIONS.add(new UpgradeOption("Keel", 1, 0, 1, "Bronze keel (skiff)",
                 Arrays.asList(new Material("Bronze keel parts",10))));
         OPTIONS.add(new UpgradeOption("Keel", 2, 0, 1, "Bronze keel (sloop)",
                 Arrays.asList(new Material("Large bronze keel parts",16))));
 
-        // Iron helm (tier 1, level 17)
+        // Iron helm (tier 1)
         OPTIONS.add(new UpgradeOption("Helm", 0, 1, 17, "Iron helm (raft)",
                 Arrays.asList(new Material("Oak plank",2), new Material("Iron bar",4))));
         OPTIONS.add(new UpgradeOption("Helm", 1, 1, 17, "Iron helm (skiff)",
@@ -93,7 +89,7 @@ public final class UpgradeData
         OPTIONS.add(new UpgradeOption("Helm", 2, 1, 17, "Iron helm (sloop)",
                 Arrays.asList(new Material("Oak plank",4), new Material("Iron bar",8))));
 
-        // Oak base/hull (tier 1 -> value 20 in your list; we use targetTier=1 here)
+        // Oak base/hull (tier 1)
         OPTIONS.add(new UpgradeOption("Base", 0, 1, 20, "Oak base (raft)",
                 Arrays.asList(new Material("Oak logs",10), new Material("Rope",6), new Material("Swamp tar",10))));
         OPTIONS.add(new UpgradeOption("Hull", 1, 1, 20, "Oak hull (skiff)",
@@ -107,7 +103,7 @@ public final class UpgradeData
         OPTIONS.add(new UpgradeOption("Keel", 2, 1, 22, "Iron keel (sloop)",
                 Arrays.asList(new Material("Large iron keel parts",16))));
 
-        // Oak mast and linen sails (tier 1)
+        // Oak sails (tier 1)
         OPTIONS.add(new UpgradeOption("Sails", 0, 1, 24, "Oak mast & linen sails (raft)",
                 Arrays.asList(new Material("Oak logs",5), new Material("Iron nails",20), new Material("Bolt of linen",5))));
         OPTIONS.add(new UpgradeOption("Sails", 1, 1, 24, "Oak mast & linen sails (skiff)",
@@ -123,7 +119,7 @@ public final class UpgradeData
         OPTIONS.add(new UpgradeOption("Hull", 2, 2, 31, "Teak hull (sloop)",
                 Arrays.asList(new Material("Large teak hull parts",16), new Material("Steel nails",600), new Material("Swamp tar",25), new Material("Lead bar",5))));
 
-        // Teak mast & canvas sails (tier 2)
+        // Teak sails (tier 2)
         OPTIONS.add(new UpgradeOption("Sails", 0, 2, 36, "Teak mast & canvas sails (raft)",
                 Arrays.asList(new Material("Teak logs",5), new Material("Steel nails",20), new Material("Bolt of canvas",5))));
         OPTIONS.add(new UpgradeOption("Sails", 1, 2, 36, "Teak mast & canvas sails (skiff)",
@@ -276,7 +272,6 @@ public final class UpgradeData
             Integer cur = currentTiers.get(o.partName);
             int curTier = cur == null ? -1 : cur;
 
-            // only show if not already built AND player meets level
             if (o.targetTier > curTier && playerSailingLevel >= o.requiredLevel)
             {
                 out.add(o);
