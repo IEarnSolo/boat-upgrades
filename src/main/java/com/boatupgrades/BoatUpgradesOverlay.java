@@ -3,7 +3,6 @@ package com.boatupgrades;
 import net.runelite.api.Client;
 import net.runelite.api.Skill;
 import net.runelite.client.ui.overlay.Overlay;
-import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.PanelComponent;
@@ -108,6 +107,8 @@ public class BoatUpgradesOverlay extends Overlay
             java.util.List<UpgradeData.UpgradeOption> liveAvailable =
                     UpgradeData.getAvailableOptions(boatTypeRaw, currentTiers, sailingLevel);
 
+            List<UpgradeData.UpgradeOption> toDisplayLive = filterHighestTiers(liveAvailable);
+
             if (!liveAvailable.isEmpty())
             {
                 cachedAvailable = new ArrayList<>(liveAvailable);
@@ -123,14 +124,13 @@ public class BoatUpgradesOverlay extends Overlay
                 lastBoatTypeRaw = -1;
             }
 
-            prevActive = true;
-
-            if (liveAvailable.isEmpty())
+            if (toDisplayLive.isEmpty())
             {
                 return panelComponent.render(graphics);
             }
 
-            renderHeaderAndOptions(graphics, boatTypeRaw, localName, captain, sailingLevel, liveAvailable);
+            renderHeaderAndOptions(graphics, boatTypeRaw, localName, captain, sailingLevel, toDisplayLive);
+
             return panelComponent.render(graphics);
         }
         else
@@ -160,7 +160,8 @@ public class BoatUpgradesOverlay extends Overlay
                     return panelComponent.render(graphics);
                 }
 
-                renderHeaderAndOptions(graphics, boatTypeToShow, localName, showCaptain, client.getRealSkillLevel(Skill.SAILING), cachedAvailable);
+                List<UpgradeData.UpgradeOption> toDisplayCached = filterHighestTiers(cachedAvailable);
+                renderHeaderAndOptions(graphics, boatTypeToShow, localName, showCaptain, client.getRealSkillLevel(Skill.SAILING), toDisplayCached);
                 return panelComponent.render(graphics);
             }
 
@@ -227,5 +228,43 @@ public class BoatUpgradesOverlay extends Overlay
         long now = System.currentTimeMillis();
         int minutes = Math.max(0, config.persistMinutes());
         cacheExpiryMillis = now + (minutes * 60L * 1000L);
+    }
+
+    private List<UpgradeData.UpgradeOption> filterHighestTiers(List<UpgradeData.UpgradeOption> options)
+    {
+        if (options == null || options.isEmpty() || !config.hideLowerTiers())
+        {
+            return options;
+        }
+
+        java.util.Map<String, UpgradeData.UpgradeOption> best = new java.util.LinkedHashMap<>();
+        for (UpgradeData.UpgradeOption opt : options)
+        {
+            String key = opt.partName;
+            UpgradeData.UpgradeOption existing = best.get(key);
+            if (existing == null || opt.targetTier > existing.targetTier)
+            {
+                best.put(key, opt);
+            }
+        }
+
+        java.util.List<UpgradeData.UpgradeOption> filtered = new ArrayList<>();
+        java.util.Set<String> added = new java.util.HashSet<>();
+        for (UpgradeData.UpgradeOption opt : options)
+        {
+            String key = opt.partName;
+            if (added.contains(key))
+            {
+                continue;
+            }
+            UpgradeData.UpgradeOption bestOpt = best.get(key);
+            if (bestOpt == opt)
+            {
+                filtered.add(opt);
+                added.add(key);
+            }
+        }
+
+        return filtered;
     }
 }

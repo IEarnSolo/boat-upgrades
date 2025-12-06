@@ -19,6 +19,18 @@ public interface BoatUpgradesConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "hideLowerTiers",
+			name = "Hide lower tiers",
+			description = "Hide lower tier upgrades from the overlay when a higher tier upgrade is available for the same boat part",
+			position = 1
+	)
+	default boolean hideLowerTiers()
+	{
+		return false;
+	}
+
+
+	@ConfigItem(
 			keyName = "comingSoon",
 			name = "Boat facilities coming soon",
 			description = "Boat facilities coming soon",
