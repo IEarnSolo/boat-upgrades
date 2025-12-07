@@ -124,7 +124,9 @@ public class BoatUpgradesOverlay extends Overlay
                 lastBoatTypeRaw = -1;
             }
 
-            if (toDisplayLive.isEmpty())
+            prevActive = true;
+
+            if (liveAvailable.isEmpty())
             {
                 return panelComponent.render(graphics);
             }

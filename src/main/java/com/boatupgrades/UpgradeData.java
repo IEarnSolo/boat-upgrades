@@ -267,7 +267,7 @@ public final class UpgradeData
         List<UpgradeOption> out = new ArrayList<>();
         for (UpgradeOption o : OPTIONS)
         {
-            if (o.boatType != -1 && o.boatType != boatType) continue;
+            if (o.boatType != boatType) continue;
 
             Integer cur = currentTiers.get(o.partName);
             int curTier = cur == null ? -1 : cur;
