@@ -1,7 +1,6 @@
 package com.boatupgrades;
 
 import com.google.inject.Provides;
-import com.google.common.primitives.Ints;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
@@ -43,6 +42,8 @@ public class BoatUpgradesPlugin extends Plugin
 	@Inject
 	private ClientThread clientThread;
 
+	private long lastAccountHash = -1;
+
 	@Override
 	protected void startUp() throws Exception
 	{
@@ -60,7 +61,6 @@ public class BoatUpgradesPlugin extends Plugin
 	@Subscribe
 	public void onCommandExecuted(CommandExecuted event)
 	{
-
 		if (event.getCommand().equalsIgnoreCase("boatvars"))
 		{
 			int[] values = new int[]
@@ -123,10 +123,11 @@ public class BoatUpgradesPlugin extends Plugin
 	{
 		GameState state = event.getGameState();
 
-		if (state == GameState.LOGGED_IN)
+		if (state == GameState.LOGGED_IN && client.getAccountHash() != lastAccountHash)
 		{
 			clientThread.invokeLater(() ->
 			{
+				lastAccountHash = client.getAccountHash();
 				changelogService.showChangelogIfNeeded();
 			});
 		}
