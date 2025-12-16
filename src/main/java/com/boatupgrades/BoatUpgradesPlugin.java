@@ -11,6 +11,7 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
@@ -24,8 +25,8 @@ import java.awt.datatransfer.StringSelection;
 @Slf4j
 @PluginDescriptor(
 	name = "Boat Upgrades",
-	description = "Display currently available upgrades for your boat",
-	tags = {"sailing", "ship"}
+	description = "Display currently available upgrades for your boat when you board or enter the shipyard",
+	tags = {"sailing", "ship", "facility", "pimp my ride"}
 )
 public class BoatUpgradesPlugin extends Plugin
 {
@@ -41,6 +42,10 @@ public class BoatUpgradesPlugin extends Plugin
 	private ChangelogService changelogService;
 	@Inject
 	private ClientThread clientThread;
+	@Inject
+	private EventBus eventBus;
+	@Inject
+	private FacilityService facilityService;
 
 	private long lastAccountHash = -1;
 
@@ -48,6 +53,7 @@ public class BoatUpgradesPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		overlayManager.add(boatUpgradesOverlay);
+		facilityService.start();
 		log.info("Boat Upgrades started");
 	}
 
@@ -55,6 +61,7 @@ public class BoatUpgradesPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		overlayManager.remove(boatUpgradesOverlay);
+		facilityService.stop();
 		log.info("Boat Upgrades stopped");
 	}
 
