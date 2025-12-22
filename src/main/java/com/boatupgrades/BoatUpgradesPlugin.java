@@ -8,6 +8,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -16,11 +17,15 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.ImageUtil;
 
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.awt.image.BufferedImage;
 
 @Slf4j
 @PluginDescriptor(
@@ -46,6 +51,11 @@ public class BoatUpgradesPlugin extends Plugin
 	private EventBus eventBus;
 	@Inject
 	private FacilityService facilityService;
+	@Inject
+	private ClientToolbar clientToolbar;
+	@Inject
+	private BoatUpgradesPanel panel;
+	private NavigationButton navButton;
 
 	private long lastAccountHash = -1;
 
@@ -55,6 +65,19 @@ public class BoatUpgradesPlugin extends Plugin
 		overlayManager.add(boatUpgradesOverlay);
 		facilityService.start();
 		log.info("Boat Upgrades started");
+
+		panel = injector.getInstance(BoatUpgradesPanel.class);
+		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "icon.png");
+
+
+		navButton = NavigationButton.builder()
+				.tooltip("Boat Upgrades")
+				.icon(icon)
+				.panel(panel)
+				//.priority(5)
+				.build();
+
+		clientToolbar.addNavigation(navButton);
 	}
 
 	@Override
@@ -63,6 +86,11 @@ public class BoatUpgradesPlugin extends Plugin
 		overlayManager.remove(boatUpgradesOverlay);
 		facilityService.stop();
 		log.info("Boat Upgrades stopped");
+
+		if (navButton != null)
+		{
+			clientToolbar.removeNavigation(navButton);
+		}
 	}
 
 	@Subscribe

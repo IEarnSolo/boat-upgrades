@@ -99,8 +99,8 @@ public interface BoatUpgradesConfig extends Config
 			keyName = "lastSeenChangelogVersion",
 			name = "lastSeenChangelogVersion",
 			description = "",
-			hidden = true
-			//position = 800
+			//hidden = true
+			position = 800
 	)
 	default String lastSeenChangelogVersion()
 	{

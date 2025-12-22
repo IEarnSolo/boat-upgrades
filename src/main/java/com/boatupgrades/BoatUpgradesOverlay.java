@@ -31,6 +31,8 @@ public class BoatUpgradesOverlay extends Overlay
     private final Client client;
     private final BoatUpgradesConfig config;
     private final FacilityService facilityService;
+    private BoatUpgradesPanel panel;
+    private final AvailableUpgradesService availableUpgradesService;
     private final PanelComponent panelComponent = new PanelComponent();
 
     private List<UpgradeData.UpgradeOption> cachedAvailable = new ArrayList<>();
@@ -41,11 +43,13 @@ public class BoatUpgradesOverlay extends Overlay
     int constructionLevel;
 
     @Inject
-    public BoatUpgradesOverlay(Client client, BoatUpgradesConfig config, FacilityService facilityService)
+    public BoatUpgradesOverlay(Client client, BoatUpgradesConfig config, FacilityService facilityService, BoatUpgradesPanel panel, AvailableUpgradesService availableUpgradesService)
     {
         this.client = client;
         this.config = config;
         this.facilityService = facilityService;
+        this.panel = panel;
+        this.availableUpgradesService = availableUpgradesService;
         setPosition(OverlayPosition.TOP_LEFT);
     }
 
@@ -126,6 +130,18 @@ public class BoatUpgradesOverlay extends Overlay
                     );
 
             List<UpgradeData.UpgradeOption> toDisplayLive = filterOptions(liveAvailable);
+
+            boolean changed = availableUpgradesService.updateIfChanged(toDisplayLive);
+
+            if (changed && panel != null)
+            {
+                log.info("[Overlay] Notifying panel of upgrade change");
+                panel.onAvailableUpgradesChanged();
+            }
+            else if (panel == null)
+            {
+                log.warn("[Overlay] Panel is NULL — cannot notify");
+            }
 
             if (toDisplayLive.isEmpty())
             {
@@ -379,7 +395,7 @@ public class BoatUpgradesOverlay extends Overlay
             Map.entry("Dragon keel", VarbitID.LOST_SCHEMATIC_DRAGON_KEEL)
     );
 
-    private boolean hasRequiredSchematic(UpgradeData.UpgradeOption opt)
+    public boolean hasRequiredSchematic(UpgradeData.UpgradeOption opt)
     {
         Integer varbit = SCHEMATIC_VARBITS.get(opt.displayName);
         if (varbit == null)

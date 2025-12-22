@@ -371,7 +371,7 @@ public final class UpgradeData
                 Arrays.asList(new Material("Teak plank",8), new Material("Steel nails",32), new Material("Relicym's balm(4)",6))));
         OPTIONS.add(new UpgradeOption("Salvaging Station", -1, 0, 42, 34, "Salvaging station",
                 Arrays.asList(new Material("Teak plank",4), new Material("Steel nails",16))));
-        OPTIONS.add(new UpgradeOption("Crystal Extractor", -1, 0, 73, 67, "Crystal Extractor",
+        OPTIONS.add(new UpgradeOption("Crystal Extractor", -1, 0, 73, 67, "Crystal extractor",
                 Arrays.asList(new Material("Ironwood plank",6), new Material("Cupronickel bar",5), new Material("Magic stone",2), new Material("Heart of ithell",1))));
         OPTIONS.add(new UpgradeOption("Eternal Brazier", -1, 0, 78, 72, "Eternal brazier",
                 Arrays.asList(new Material("Ironwood plank",4), new Material("Rune nails",16), new Material("Runite bar",6), new Material("Cupronickel bar",6), new Material("Te salt",250), new Material("Efh salt",250), new Material("Urt salt",250))));
