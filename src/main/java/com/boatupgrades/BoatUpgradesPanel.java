@@ -9,6 +9,7 @@ import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.client.util.LinkBrowser;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -19,7 +20,6 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -451,8 +451,7 @@ public class BoatUpgradesPanel extends PluginPanel
 
                     wikiName = URLEncoder.encode(wikiName.replace(" ", "_"), StandardCharsets.UTF_8);
 
-                    String url = "https://oldschool.runescape.wiki/w/" + wikiName;
-                    Desktop.getDesktop().browse(new URI(url));
+                    LinkBrowser.browse("https://oldschool.runescape.wiki/w/" + wikiName);
 
 
                 }
