@@ -30,6 +30,7 @@ public class FacilityService
 
     private final Map<String, Integer> highestDetected = new HashMap<>();
     private int pendingScanTicks = -1;
+    public boolean detectedFacilitiesComplete;
 
     @Inject
     public FacilityService(Client client, EventBus eventBus)
@@ -249,6 +250,7 @@ public class FacilityService
                 }
             }
         }
+        detectedFacilitiesComplete = true;
     }
 
     @Subscribe
@@ -339,6 +341,12 @@ public class FacilityService
     {
         return new HashMap<>(highestDetected);
     }
+
+    public boolean hasDetectedAllFacilities()
+    {
+        return detectedFacilitiesComplete;
+    }
+
 
     private void updateHighest(String partName, int tier)
     {

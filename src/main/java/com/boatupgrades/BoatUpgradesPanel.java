@@ -1,6 +1,9 @@
 package com.boatupgrades;
 
+import com.boatupgrades.utils.SchematicUtils;
+import com.boatupgrades.utils.UpgradeVisibilityUtils;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -16,8 +19,14 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Singleton
 @Slf4j
@@ -25,30 +34,43 @@ public class BoatUpgradesPanel extends PluginPanel
 {
     private static final String TAB_AVAILABLE = "AVAILABLE";
     private static final String TAB_MY_LIST = "MY_LIST";
+    private String activeTab = TAB_AVAILABLE;
+
     private static final Border ACTIVE_TAB_BORDER =
             BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.BRAND_ORANGE);
     private static final Border INACTIVE_TAB_BORDER =
             BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.DARK_GRAY_COLOR);
+
     private final CardLayout cardLayout = new CardLayout();
+
     public final JPanel cardContainer = new JPanel(cardLayout);
+    public JPanel availableUpgradesContainer;
 
     private JLabel availableTab;
     private JLabel myListTab;
-    public JPanel availableUpgradesContainer;
 
-    private String activeTab = TAB_AVAILABLE;
+    private final Map<String, ImageIcon> imageCache = new HashMap<>();
+    private final Map<UpgradeData.UpgradeOption, Boolean> schematicUnlockedMap = new HashMap<>();
+
 
     private ItemManager itemManager;
     private BoatUpgradesOverlay boatUpgradesOverlay;
-
+    private final BoatUpgradesConfig config;
+    private Client client;
+    @Inject
+    private SchematicUtils schematicUtils;
     @Inject
     private AvailableUpgradesService availableUpgradesService;
+    @Inject
+    private UpgradeVisibilityUtils upgradeVisibilityUtils;
 
     @Inject
-    public BoatUpgradesPanel(ItemManager itemManager)
+    public BoatUpgradesPanel(Client client, ItemManager itemManager, BoatUpgradesConfig config)
     {
         super(false);
         this.itemManager = itemManager;
+        this.config = config;
+        this.client = client;
 
         setLayout(new BorderLayout());
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -59,10 +81,21 @@ public class BoatUpgradesPanel extends PluginPanel
 
     public void onAvailableUpgradesChanged()
     {
+        List<UpgradeData.UpgradeOption> options = availableUpgradesService.get();
+
+        schematicUnlockedMap.clear();
+        for (UpgradeData.UpgradeOption opt : options)
+        {
+            schematicUnlockedMap.put(opt, schematicUtils.hasSchematic(opt.displayName));
+        }
+
+        List<UpgradeData.UpgradeOption> filteredOptions = options.stream()
+                .filter(upgradeVisibilityUtils::shouldShowUpgrade)
+                .collect(Collectors.toList());
+
         SwingUtilities.invokeLater(() ->
         {
-            log.info("[Panel] Received available upgrades update");
-            updateAvailableUpgrades(availableUpgradesService.get());
+            updateAvailableUpgrades(filteredOptions);
         });
     }
 
@@ -102,11 +135,25 @@ public class BoatUpgradesPanel extends PluginPanel
                 "icon.png"
         );
 
-        Image scaled = image.getScaledInstance(18, 18, Image.SCALE_SMOOTH);
+        //Image scaled = image.getScaledInstance(18, 18, Image.SCALE_SMOOTH);
         return new ImageIcon(image);
     }
 
-    private Icon loadUpgradeImage(UpgradeData.UpgradeOption opt, int maxSize)
+    private ImageIcon getUpgradeIcon(UpgradeData.UpgradeOption opt)
+    {
+        String key = opt.displayName + ":" + opt.boatType;
+
+        return imageCache.computeIfAbsent(key, k -> {
+            BufferedImage img = loadUpgradeImage(opt);
+            if (img != null) {
+                return new ImageIcon(img);
+            } else {
+                return (ImageIcon) UIManager.getIcon("OptionPane.warningIcon");
+            }
+        });
+    }
+
+    private BufferedImage loadUpgradeImage(UpgradeData.UpgradeOption opt)
     {
         String basePath = "/com/boatupgrades/ui/";
 
@@ -116,7 +163,6 @@ public class BoatUpgradesPanel extends PluginPanel
         {
             candidates.add(opt.displayName + " " + opt.boatType + ".png");
         }
-
         candidates.add(opt.displayName + ".png");
 
         for (String name : candidates)
@@ -128,27 +174,11 @@ public class BoatUpgradesPanel extends PluginPanel
 
             if (image != null)
             {
-                return new ImageIcon(resizePreserveAspect(image, maxSize));
+                return image;
             }
         }
 
-        return UIManager.getIcon("OptionPane.warningIcon");
-    }
-
-    private BufferedImage resizePreserveAspect(BufferedImage image, int maxSize)
-    {
-        int width = image.getWidth();
-        int height = image.getHeight();
-
-        float scale = Math.min(
-                (float) maxSize / width,
-                (float) maxSize / height
-        );
-
-        int newWidth = Math.round(width * scale);
-        int newHeight = Math.round(height * scale);
-
-        return ImageUtil.resizeImage(image, newWidth, newHeight);
+        return null;
     }
 
     private JPanel buildTabBar()
@@ -225,7 +255,7 @@ public class BoatUpgradesPanel extends PluginPanel
         cardContainer.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
         cardContainer.add(buildAvailableUpgradesCard(), TAB_AVAILABLE);
-        cardContainer.add(buildPlaceholderPanel("My list"), TAB_MY_LIST);
+        cardContainer.add(buildPlaceholderPanel("Under development"), TAB_MY_LIST);
 
         cardLayout.show(cardContainer, TAB_AVAILABLE);
 
@@ -258,6 +288,7 @@ public class BoatUpgradesPanel extends PluginPanel
         JScrollPane scroll = new JScrollPane(availableUpgradesContainer);
         scroll.setBorder(null);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
         JPanel wrapper = new JPanel(new BorderLayout());
@@ -286,65 +317,163 @@ public class BoatUpgradesPanel extends PluginPanel
 
         availableUpgradesContainer.revalidate();
         availableUpgradesContainer.repaint();
-
-        cardContainer.revalidate();
-        cardContainer.repaint();
     }
 
     private JPanel buildUpgradeRow(UpgradeData.UpgradeOption opt)
     {
-        log.info(
-                "[Panel] Building row for '{}' (boatType={})",
-                opt.displayName,
-                opt.boatType
-        );
-
         JPanel row = new JPanel(new BorderLayout(10, 0));
         row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         row.setBorder(new EmptyBorder(6, 6, 6, 6));
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel imageLabel = new JLabel(loadUpgradeImage(opt, 50));
+        JLabel imageLabel = new JLabel(getUpgradeIcon(opt));
         imageLabel.setPreferredSize(new Dimension(50, 50));
         row.add(imageLabel, BorderLayout.WEST);
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
 
         JPanel textCol = new JPanel();
         textCol.setLayout(new BoxLayout(textCol, BoxLayout.Y_AXIS));
         textCol.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-        JLabel title = new JLabel(opt.displayName);
+        JTextArea title = new JTextArea(opt.displayName);
         title.setFont(FontManager.getRunescapeBoldFont());
         title.setForeground(Color.WHITE);
+        title.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        title.setAlignmentX(Component.LEFT_ALIGNMENT);
+        title.setMargin(new Insets(0, 0, 0, 0));
+        title.setLineWrap(true);
+        title.setWrapStyleWord(true);
+        title.setEditable(false);
+        title.setFocusable(false);
+        title.setOpaque(false);
 
+        title.setSize(100, Short.MAX_VALUE);
+        Dimension titlePreferredSize = title.getPreferredSize();
+        title.setMaximumSize(new Dimension(100, titlePreferredSize.height));
+
+        makeClickable(title, opt.displayName);
         textCol.add(title);
 
-        if (!opt.materials.isEmpty())
+        textCol.add(Box.createVerticalStrut(2));
+
+        for (UpgradeData.Material material : opt.materials)
         {
-            JLabel mats = new JLabel(formatMaterials(opt));
-            mats.setFont(FontManager.getRunescapeFont());
-            mats.setForeground(Color.LIGHT_GRAY);
-            textCol.add(mats);
+            JLabel matLabel = new JLabel(String.valueOf(material));
+            matLabel.setFont(FontManager.getRunescapeSmallFont());
+            matLabel.setForeground(Color.LIGHT_GRAY);
+            matLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            makeClickable(matLabel, material.name);
+            textCol.add(matLabel);
+        }
+
+        boolean hasSchematic = schematicUnlockedMap.getOrDefault(opt, true);
+
+        if (!hasSchematic && !config.filterSchematicRequirement())
+        {
+            textCol.add(Box.createVerticalStrut(2));
+
+            String schematicName = schematicUtils.getSchematicNameForUpgrade(opt.displayName);
+            if (schematicName == null)
+            {
+                schematicName = "schematic";
+            }
+
+            JTextArea schematicLabel = new JTextArea("Requires " + schematicName);
+            schematicLabel.setFont(FontManager.getRunescapeSmallFont());
+            schematicLabel.setForeground(Color.YELLOW);
+            schematicLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            schematicLabel.setMargin(new Insets(0, 0, 0, 0));
+            schematicLabel.setLineWrap(true);
+            schematicLabel.setWrapStyleWord(true);
+            schematicLabel.setEditable(false);
+            schematicLabel.setFocusable(false);
+            schematicLabel.setOpaque(false);
+
+            schematicLabel.setSize(160, Short.MAX_VALUE);
+            Dimension schematicLabelPreferredSize = schematicLabel.getPreferredSize();
+            schematicLabel.setMaximumSize(new Dimension(160, schematicLabelPreferredSize.height));
+
+            makeClickable(schematicLabel, schematicName);
+
+            textCol.add(schematicLabel);
+        }
+
+        boolean meetsConstruction = upgradeVisibilityUtils.meetsConstructionRequirement(opt);
+
+        if (!meetsConstruction && !config.filterConstructionRequirement())
+        {
+            textCol.add(Box.createVerticalStrut(2));
+
+            JLabel constructionLabel = new JLabel("Requires " + opt.requiredConstructionLevel + " Construction");
+            constructionLabel.setFont(FontManager.getRunescapeSmallFont());
+            constructionLabel.setForeground(Color.YELLOW);
+            constructionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            //makeClickable(constructionLabel, "Construction");
+
+            textCol.add(constructionLabel);
         }
 
         row.add(textCol, BorderLayout.CENTER);
+
+        Dimension rowPreferredSize = row.getPreferredSize();
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, rowPreferredSize.height));
+
         return row;
     }
 
-    private String formatMaterials(UpgradeData.UpgradeOption opt)
+    private void makeClickable(JComponent component, String name)
     {
-        StringBuilder sb = new StringBuilder();
-
-        for (int i = 0; i < opt.materials.size(); i++)
+        Color originalColor = component.getForeground();
+        component.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        component.addMouseListener(new MouseAdapter()
         {
-            if (i > 0)
+            @Override
+            public void mousePressed(MouseEvent e)
             {
-                sb.append(", ");
-            }
-            sb.append(opt.materials.get(i));
-        }
+                try
+                {
+                    String wikiName = name;
 
-        return sb.toString();
+                    if (wikiName.equals("Teleport focus") ||
+                            wikiName.equals("Greater teleport focus") ||
+                            wikiName.equals("Anchor") ||
+                            wikiName.equals("Range") ||
+                            wikiName.equals("Keg"))
+                    {
+                        wikiName += " (facility)";
+                    }
+
+                    if (!wikiName.equals("Rosewood & cotton sails schematic"))
+                    {
+                        wikiName = wikiName.replace("&", "and");
+                    }
+
+                    wikiName = URLEncoder.encode(wikiName.replace(" ", "_"), StandardCharsets.UTF_8);
+
+                    String url = "https://oldschool.runescape.wiki/w/" + wikiName;
+                    Desktop.getDesktop().browse(new URI(url));
+
+
+                }
+                catch (Exception ex)
+                {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e)
+            {
+                component.setForeground(ColorScheme.BRAND_ORANGE);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e)
+            {
+                component.setForeground(originalColor);
+            }
+        });
     }
 
     private JPanel buildEmptyState(String text)

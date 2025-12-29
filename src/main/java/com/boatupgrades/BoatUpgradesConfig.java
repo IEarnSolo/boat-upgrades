@@ -17,16 +17,23 @@ public interface BoatUpgradesConfig extends Config
 	String overlaySection = "overlaySection";
 
 	@ConfigSection(
+			name = "Side panel",
+			description = "Side panel position",
+			position = 200
+	)
+	String sidePanelSection = "sidePanelSection";
+
+	@ConfigSection(
 			name = "Core boat parts",
 			description = "Toggle which core boat parts are shown in the overlay",
-			position = 200
+			position = 300
 	)
 	String coreBoatPartsSection = "coreBoatPartsSection";
 
 	@ConfigSection(
 			name = "Boat facilities",
 			description = "Toggle which boat facilities are shown in the overlay",
-			position = 300
+			position = 400
 	)
 	String facilitiesSection = "facilitiesSection";
 
@@ -85,35 +92,26 @@ public interface BoatUpgradesConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "comingSoon",
-			name = "Schematic checks under development",
-			description = "Schematic checks for text overlay under development",
-			//position = 400,
-			hidden = true
+			keyName = "overlayOnlyInShipyard",
+			name = "Show only in shipyard",
+			description = "Show the text overlay only when you are in the shipyard",
+			section = overlaySection
 	)
-	default boolean comingSoonNotice()
+	default boolean overlayOnlyInShipyard()
 	{
-		return true;
-	}
-	@ConfigItem(
-			keyName = "lastSeenChangelogVersion",
-			name = "lastSeenChangelogVersion",
-			description = "",
-			//hidden = true
-			position = 800
-	)
-	default String lastSeenChangelogVersion()
-	{
-		return "";
+		return false;
 	}
 
 	@ConfigItem(
-			keyName = "lastSeenChangelogVersion",
-			name = "",
-			description = "",
-			hidden = true
+			keyName = "panelPosition",
+			name = "Side panel position",
+			description = "Specify where the Boat Upgrades panel appears in the sidebar (lower = higher up)",
+			section = sidePanelSection
 	)
-	void setLastSeenChangelogVersion(String value);
+	default int panelPosition()
+	{
+		return 5;
+	}
 
 	@ConfigItem(
 			keyName = "showBaseHull",
@@ -266,4 +264,35 @@ public interface BoatUpgradesConfig extends Config
 			section = facilitiesSection
 	)
 	default boolean showEternalBrazier() { return false; }
+
+	@ConfigItem(
+			keyName = "comingSoon",
+			name = "Schematic checks under development",
+			description = "Schematic checks for text overlay under development",
+			//position = 400,
+			hidden = true
+	)
+	default boolean comingSoonNotice()
+	{
+		return true;
+	}
+	@ConfigItem(
+			keyName = "lastSeenChangelogVersion",
+			name = "lastSeenChangelogVersion",
+			description = "",
+			hidden = true
+			//position = 800
+	)
+	default String lastSeenChangelogVersion()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+			keyName = "lastSeenChangelogVersion",
+			name = "",
+			description = "",
+			hidden = true
+	)
+	void setLastSeenChangelogVersion(String value);
 }

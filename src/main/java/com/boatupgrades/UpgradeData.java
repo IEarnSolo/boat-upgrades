@@ -296,13 +296,13 @@ public final class UpgradeData
         OPTIONS.add(new UpgradeOption("Salvaging Hook", -1, 2, 27, 18, "Steel salvaging hook",
                 Arrays.asList(new Material("Teak plank",4), new Material("Steel nails",16), new Material("Steel bar",8), new Material("Rope",1), new Material("Lead bar",3))));
         OPTIONS.add(new UpgradeOption("Salvaging Hook", -1, 3, 44, 30, "Mithril salvaging hook",
-                Arrays.asList(new Material("Mahogany plank",4), new Material("Mithril nails",16), new Material("Mithril bar",6), new Material("Rope",1))));
+                Arrays.asList(new Material("Mahogany plank",4), new Material("Mithril nails",16), new Material("Mithril bar",6), new Material("Rope",1), new Material("Lead bar",3))));
         OPTIONS.add(new UpgradeOption("Salvaging Hook", -1, 4, 59, 52, "Adamant salvaging hook",
                 Arrays.asList(new Material("Camphor plank",4), new Material("Adamantite nails",16), new Material("Adamantite",6), new Material("Rope",1), new Material("Lead bar",3))));
         OPTIONS.add(new UpgradeOption("Salvaging Hook", -1, 5, 74, 66, "Rune salvaging hook",
                 Arrays.asList(new Material("Ironwood plank",4), new Material("Rune nails",16), new Material("Runite bar",6), new Material("Rope",1), new Material("Lead bar",4), new Material("Cupronickel bar",4))));
         OPTIONS.add(new UpgradeOption("Salvaging Hook", -1, 6, 86, 78, "Dragon salvaging hook",
-                Arrays.asList(new Material("Rosewood plank",7), new Material("Dragon nails",16), new Material("Dragon metal sheet",6), new Material("Rope",1), new Material("Cupronickel bar",4), new Material("Broken dragon hook",1))));
+                Arrays.asList(new Material("Rosewood plank",4), new Material("Dragon nails",16), new Material("Dragon metal sheet",6), new Material("Rope",1), new Material("Cupronickel bar",4), new Material("Broken dragon hook",1))));
 
         // Cannon
         OPTIONS.add(new UpgradeOption("Cannon", -1, 0, 28, 21, "Bronze cannon",
