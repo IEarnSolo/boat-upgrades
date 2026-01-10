@@ -26,7 +26,7 @@ public class ChangelogService
         this.config = config;
     }
 
-    private static final String PLUGIN_VERSION = "1.2.2";
+    private static final String PLUGIN_VERSION = "1.2.3";
     private static final String CHANGELOG_RESOURCE = "/changelog.md";
     private boolean changelogShownThisSession = false;
     public void showChangelogIfNeeded()
