@@ -44,6 +44,11 @@ public final class UpgradeData
             this.displayName = displayName;
             this.materials = materials == null ? Collections.emptyList() : materials;
         }
+
+        public String getStableId()
+        {
+            return partName + "|" + boatType + "|" + targetTier;
+        }
     }
 
     private static final List<UpgradeOption> OPTIONS = new ArrayList<>();
@@ -376,6 +381,27 @@ public final class UpgradeData
                 Arrays.asList(new Material("Ironwood plank",4), new Material("Rune nails",16), new Material("Runite bar",6), new Material("Cupronickel bar",6), new Material("Te salt",250), new Material("Efh salt",250), new Material("Urt salt",250))));
     }
 
+    public static List<UpgradeOption> getAllOptions()
+    {
+        return Collections.unmodifiableList(OPTIONS);
+    }
+
+    public static Optional<UpgradeOption> findByStableId(String stableId)
+    {
+        return OPTIONS.stream()
+                .filter(option -> option.getStableId().equals(stableId))
+                .findFirst();
+    }
+
+    public static boolean isSupportedOnBoat(UpgradeOption option, int boatType)
+    {
+        if (option.boatType != -1 && option.boatType != boatType)
+        {
+            return false;
+        }
+        return boatType != 0 || !RAFT_EXCLUDED_FACILITIES.contains(option.partName);
+    }
+
     public static List<UpgradeOption> getAvailableOptions(
             int boatType,
             Map<String, Integer> currentTiers,
@@ -386,17 +412,11 @@ public final class UpgradeData
     {
         List<UpgradeOption> out = new ArrayList<>();
 
-        boolean isRaft = boatType == 0;
         boolean filterConstruction = config.filterConstructionRequirement();
 
         for (UpgradeOption o : OPTIONS)
         {
-            if (o.boatType != -1 && o.boatType != boatType)
-            {
-                continue;
-            }
-
-            if (isRaft && RAFT_EXCLUDED_FACILITIES.contains(o.partName))
+            if (!isSupportedOnBoat(o, boatType))
             {
                 continue;
             }

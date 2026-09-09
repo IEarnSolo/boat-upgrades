@@ -16,7 +16,6 @@ import javax.inject.Inject;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT;
 import static net.runelite.api.gameval.VarbitID.SAILING_BOARDED_BOAT_TYPE;
@@ -36,6 +35,7 @@ public class BoatUpgradesOverlay extends Overlay
     private final FacilityService facilityService;
     private BoatUpgradesPanel panel;
     private final AvailableUpgradesService availableUpgradesService;
+    private final MaterialOwnershipService materialOwnershipService;
     @Inject
     private UpgradeVisibilityUtils upgradeVisibilityUtils;
     @Inject
@@ -54,13 +54,14 @@ public class BoatUpgradesOverlay extends Overlay
 
 
     @Inject
-    public BoatUpgradesOverlay(Client client, BoatUpgradesConfig config, FacilityService facilityService, BoatUpgradesPanel panel, AvailableUpgradesService availableUpgradesService)
+    public BoatUpgradesOverlay(Client client, BoatUpgradesConfig config, FacilityService facilityService, BoatUpgradesPanel panel, AvailableUpgradesService availableUpgradesService, MaterialOwnershipService materialOwnershipService)
     {
         this.client = client;
         this.config = config;
         this.facilityService = facilityService;
         this.panel = panel;
         this.availableUpgradesService = availableUpgradesService;
+        this.materialOwnershipService = materialOwnershipService;
         setPosition(OverlayPosition.TOP_LEFT);
         //setLayer(OverlayLayer.ABOVE_WIDGETS);
     }
@@ -141,7 +142,7 @@ public class BoatUpgradesOverlay extends Overlay
                 return null;
             }
 
-            boolean changed = availableUpgradesService.updateIfChanged(toDisplayLive);
+            boolean changed = availableUpgradesService.updateFromConfirmedScan(toDisplayLive);
 
             if (changed && panel != null)
             {
@@ -150,7 +151,7 @@ public class BoatUpgradesOverlay extends Overlay
             }
             else if (panel == null)
             {
-                log.warn("[Overlay] Panel is NULL — cannot notify");
+                log.warn("[Overlay] Panel is NULL - cannot notify");
             }
 
             if (!liveAvailable.isEmpty())
@@ -233,7 +234,7 @@ public class BoatUpgradesOverlay extends Overlay
             }
             else if (panel == null)
             {
-                log.warn("[Overlay] Panel is NULL — cannot notify");
+                log.warn("[Overlay] Panel is NULL - cannot notify");
             }
             facilityService.detectedFacilitiesComplete = false;
 
@@ -296,13 +297,15 @@ public class BoatUpgradesOverlay extends Overlay
                             .build()
             );
 
-            String mats = opt.materials.stream()
-                    .map(Object::toString)
-                    .collect(Collectors.joining(", "));
-
-            panelComponent.getChildren().add(
-                    LineComponent.builder().left(mats).build()
-            );
+            for (UpgradeData.Material material : opt.materials)
+            {
+                Color color = config.coloredItemRequirements().colorsOverlay()
+                        ? materialOwnershipService.getColor(material.name, material.qty)
+                        : MaterialOwnershipService.NEUTRAL_COLOR;
+                panelComponent.getChildren().add(
+                        LineComponent.builder().left(material.toString()).leftColor(color).build()
+                );
+            }
 
             if (!hasSchematic && !config.filterSchematicRequirement())
             {

@@ -24,6 +24,20 @@ public interface BoatUpgradesConfig extends Config
 	String sidePanelSection = "sidePanelSection";
 
 	@ConfigSection(
+			name = "Item requirements",
+			description = "Configure material ownership checks",
+			position = 250
+	)
+	String itemRequirementsSection = "itemRequirementsSection";
+
+	@ConfigSection(
+			name = "Bank filtering",
+			description = "Configure temporary View in Bank material filters",
+			position = 275
+	)
+	String bankFilteringSection = "bankFilteringSection";
+
+	@ConfigSection(
 			name = "Core boat parts",
 			description = "Toggle which core boat parts are shown in the overlay",
 			position = 300
@@ -111,6 +125,39 @@ public interface BoatUpgradesConfig extends Config
 	default int panelPosition()
 	{
 		return 5;
+	}
+
+	@ConfigItem(
+			keyName = "coloredItemRequirements",
+			name = "Colored item requirements",
+			description = "Choose where material requirements are colored based on your inventory and saved storage contents",
+			section = itemRequirementsSection
+	)
+	default MaterialColorMode coloredItemRequirements()
+	{
+		return MaterialColorMode.BOTH;
+	}
+
+	@ConfigItem(
+			keyName = "includeGroupStorage",
+			name = "Include group storage",
+			description = "Include your most recently viewed Group Ironman shared storage when checking material requirements",
+			section = itemRequirementsSection
+	)
+	default boolean includeGroupStorage()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "keepTemporaryBankView",
+			name = "Keep filtered view open",
+			description = "Reopen the temporary material filter when the bank is closed and reopened",
+			section = bankFilteringSection
+	)
+	default boolean keepTemporaryBankView()
+	{
+		return false;
 	}
 
 	@ConfigItem(

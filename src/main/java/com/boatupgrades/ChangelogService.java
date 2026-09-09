@@ -26,7 +26,7 @@ public class ChangelogService
         this.config = config;
     }
 
-    private static final String PLUGIN_VERSION = "1.2.4";
+    private static final String PLUGIN_VERSION = "1.3.0";
     private static final String CHANGELOG_RESOURCE = "/changelog.md";
     private boolean changelogShownThisSession = false;
     public void showChangelogIfNeeded()
@@ -63,15 +63,18 @@ public class ChangelogService
         List<String> toShowVersions = new ArrayList<>();
         for (String version : changelog.keySet())
         {
-            if (version.equals(lastSeen))
+            if (compareVersions(version, lastSeen) > 0 && compareVersions(version, PLUGIN_VERSION) <= 0)
             {
-                break;
+                toShowVersions.add(version);
+                log.debug("Including changelog version {} because it is newer than {} and not newer than {}",
+                        version, lastSeen, PLUGIN_VERSION);
             }
-            toShowVersions.add(version);
         }
 
         if (toShowVersions.isEmpty())
         {
+            log.debug("No changelog entries exist between last seen version {} and plugin version {}; marking current version as seen",
+                    lastSeen, PLUGIN_VERSION);
             changelogShownThisSession = true;
             config.setLastSeenChangelogVersion(PLUGIN_VERSION);
             return;
@@ -90,6 +93,57 @@ public class ChangelogService
 
         changelogShownThisSession = true;
         config.setLastSeenChangelogVersion(PLUGIN_VERSION);
+    }
+
+    private int compareVersions(String left, String right)
+    {
+        int[] leftParts = parseVersion(left);
+        int[] rightParts = parseVersion(right);
+        int length = Math.max(leftParts.length, rightParts.length);
+        for (int i = 0; i < length; i++)
+        {
+            int leftPart = i < leftParts.length ? leftParts[i] : 0;
+            int rightPart = i < rightParts.length ? rightParts[i] : 0;
+            if (leftPart != rightPart)
+            {
+                return Integer.compare(leftPart, rightPart);
+            }
+        }
+        return 0;
+    }
+
+    private int[] parseVersion(String version)
+    {
+        String normalized = version == null ? "" : version.trim();
+        if (normalized.startsWith("v") || normalized.startsWith("V"))
+        {
+            normalized = normalized.substring(1);
+        }
+
+        String[] tokens = normalized.split("\\.");
+        int[] parts = new int[tokens.length];
+        for (int i = 0; i < tokens.length; i++)
+        {
+            String numeric = tokens[i].replaceFirst("[^0-9].*$", "");
+            if (numeric.isEmpty())
+            {
+                log.debug("Treating non-numeric version component '{}' in version {} as zero", tokens[i], version);
+                parts[i] = 0;
+            }
+            else
+            {
+                try
+                {
+                    parts[i] = Integer.parseInt(numeric);
+                }
+                catch (NumberFormatException ex)
+                {
+                    log.warn("Version component '{}' in version {} is too large; treating it as zero", numeric, version, ex);
+                    parts[i] = 0;
+                }
+            }
+        }
+        return parts;
     }
 
     public Map<String, List<String>> loadChangelogFromResource()

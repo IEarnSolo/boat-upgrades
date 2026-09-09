@@ -2,13 +2,20 @@ package com.boatupgrades.utils;
 
 import net.runelite.api.Client;
 import net.runelite.api.gameval.VarbitID;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
+@Singleton
 public class SchematicUtils
 {
     private final Client client;
+    private final Map<String, Boolean> cachedUnlockStates = new ConcurrentHashMap<>();
+    private volatile boolean cachedStatesKnown;
 
     @Inject
     public SchematicUtils(Client client)
@@ -47,4 +54,59 @@ public class SchematicUtils
                 .findFirst()
                 .orElse(null);
     }
+
+    /**
+     * Returns the last schematic state captured on the client thread. This is safe for Swing rendering.
+     * A tracked schematic defaults to locked until the first client-thread refresh completes.
+     */
+    public boolean hasCachedSchematic(String upgradeName)
+    {
+        return SCHEMATICS.stream()
+                .filter(entry -> entry.getUpgradeName().equals(upgradeName))
+                .findFirst()
+                .map(entry -> cachedUnlockStates.getOrDefault(upgradeName, false))
+                .orElse(true);
+    }
+
+    public boolean areCachedStatesKnown()
+    {
+        return cachedStatesKnown;
+    }
+
+    public void refreshCachedUnlockStates()
+    {
+        for (SchematicEntry entry : SCHEMATICS)
+        {
+            boolean unlocked = client.getVarbitValue(entry.getVarbit()) == 1;
+            cachedUnlockStates.put(entry.getUpgradeName(), unlocked);
+            log.debug("[Schematics] Cached {} unlocked={}", entry.getUpgradeName(), unlocked);
+        }
+        cachedStatesKnown = true;
+        log.debug("[Schematics] Refreshed {} schematic states on the client thread", SCHEMATICS.size());
+    }
+
+    public void clearCachedUnlockStates()
+    {
+        cachedUnlockStates.clear();
+        cachedStatesKnown = false;
+        log.debug("[Schematics] Cleared cached unlock states; schematic status is unknown until login");
+    }
+
+    public boolean refreshCachedUnlockState(int varbitId)
+    {
+        Optional<SchematicEntry> changed = SCHEMATICS.stream()
+                .filter(entry -> entry.getVarbit() == varbitId)
+                .findFirst();
+        if (!changed.isPresent())
+        {
+            return false;
+        }
+
+        SchematicEntry entry = changed.get();
+        boolean unlocked = client.getVarbitValue(entry.getVarbit()) == 1;
+        cachedUnlockStates.put(entry.getUpgradeName(), unlocked);
+        log.debug("[Schematics] Updated cached {} unlocked={} from varbit {}", entry.getUpgradeName(), unlocked, varbitId);
+        return true;
+    }
+
 }
