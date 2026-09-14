@@ -150,6 +150,17 @@ public interface BoatUpgradesConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "showBankRequirementProgress",
+			name = "Show bank requirement progress",
+			description = "Show inventory progress for materials in Total materials bank upgrade sections",
+			section = itemRequirementsSection
+	)
+	default boolean showBankRequirementProgress()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "keepTemporaryBankView",
 			name = "Keep filtered view open",
 			description = "Reopen the temporary material filter when the bank is closed and reopened",
@@ -326,8 +337,8 @@ public interface BoatUpgradesConfig extends Config
 	@ConfigItem(
 			keyName = "lastSeenChangelogVersion",
 			name = "lastSeenChangelogVersion",
-			description = "",
-			hidden = true
+			description = ""//,
+			//hidden = true
 			//position = 800
 	)
 	default String lastSeenChangelogVersion()

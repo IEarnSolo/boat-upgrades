@@ -75,6 +75,10 @@ public class BoatUpgradesPlugin extends Plugin
 	@Inject
 	private BankMaterialPlaceholderOverlay bankMaterialPlaceholderOverlay;
 	@Inject
+	private BankMaterialSectionOverlay bankMaterialSectionOverlay;
+	@Inject
+	private BankMaterialRequirementOverlay bankMaterialRequirementOverlay;
+	@Inject
 	private SailingMaterialsBankTagService sailingMaterialsBankTagService;
 	@Inject
 	private ClientToolbar clientToolbar;
@@ -91,6 +95,8 @@ public class BoatUpgradesPlugin extends Plugin
 		if (boatUpgradesOverlay == null) boatUpgradesOverlay = injector.getInstance(BoatUpgradesOverlay.class);
 		overlayManager.add(boatUpgradesOverlay);
 		overlayManager.add(bankMaterialPlaceholderOverlay);
+		overlayManager.add(bankMaterialSectionOverlay);
+		overlayManager.add(bankMaterialRequirementOverlay);
 		facilityService.start();
 		materialOwnershipService.validateRegistry();
 		bankMaterialViewService.startUp();
@@ -134,6 +140,8 @@ public class BoatUpgradesPlugin extends Plugin
 		bankMaterialViewService.shutDown();
 		overlayManager.remove(boatUpgradesOverlay);
 		overlayManager.remove(bankMaterialPlaceholderOverlay);
+		overlayManager.remove(bankMaterialSectionOverlay);
+		overlayManager.remove(bankMaterialRequirementOverlay);
 		facilityService.stop();
 		log.info("Boat Upgrades stopped");
 
@@ -212,6 +220,11 @@ public class BoatUpgradesPlugin extends Plugin
 		{
 			log.debug("[Materials] Ownership display configuration changed: {}", event.getKey());
 			if (panel != null) panel.refreshMaterialColors();
+		}
+		if ("showBankRequirementProgress".equals(event.getKey()))
+		{
+			log.debug("[Bank View] Bank upgrade-section requirement progress enabled={}",
+				config.showBankRequirementProgress());
 		}
 		if ("keepTemporaryBankView".equals(event.getKey()))
 		{

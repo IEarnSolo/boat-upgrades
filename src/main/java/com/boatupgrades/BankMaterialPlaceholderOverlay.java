@@ -52,7 +52,7 @@ public class BankMaterialPlaceholderOverlay extends WidgetItemOverlay
 			return;
 		}
 
-		String tooltip = bankMaterialViewService.getFakePlaceholderTooltip(itemId);
+		String tooltip = bankMaterialViewService.getFakePlaceholderTooltip(itemId, widget.getIndex());
 		if (tooltip != null)
 		{
 			tooltipManager.add(new Tooltip(tooltip));

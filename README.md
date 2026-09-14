@@ -43,7 +43,7 @@ The catalog contains every supported upgrade - not only the ones currently avail
 
 ## Track the materials you own
 
-Material requirements can be colored everywhere they appear in the side panel and/or text overlay:
+Material requirements can be colored everywhere they appear in the side panel and/or text overlay and item overlay:
 
 - **Green:** the full quantity is in your inventory.
 - **White:** the full quantity is available across your inventory and observed storage.
@@ -58,11 +58,19 @@ Schematic requirements use green when unlocked, yellow when still locked, and ne
 
 When the bank is open and RuneLite's **Bank Tags** plugin is enabled, every upgrade card has a **View in Bank** button. The same action is available on a list's aggregated **Total materials** card.
 
-Clicking it opens a temporary material view for that upgrade or list. Items and bank placeholders remain usable, while missing materials receive temporary visual placeholders with quantity tooltips. Closing the bank exits the temporary view. Toggling on "Keep filtered view open" in the plugin settings will retain the material view when closing the bank.
+Clicking it opens a temporary material view for that upgrade or list. Items and bank placeholders remain usable, while missing materials receive temporary visual placeholders with quantity tooltips.
+
+Each material in an upgrade view also shows compact inventory progress in the bottom-right corner - `1/3`. The first number is the amount currently in your inventory and the second is the amount required. These indicators can be disabled with **Show bank requirement progress** in the plugin settings.
+
+The Total materials view begins with an alphabetical **All materials** aggregate, followed by a labeled section for every upgrade in the active list. Per-upgrade sections use the same inventory-progress indicators and account for multiple copies of an upgrade.
 
 | Choose **View in Bank** | Filtered material view                                                            |
 |---|-----------------------------------------------------------------------------------|
 | ![The View in Bank button on an upgrade card](viewinbankbutton.png) | ![A bank filtered to the materials required by an upgrade](filteredmaterials.png) |
+
+| Choose **View in Bank** for list totals | Aggregated and per-upgrade material sections |
+|---|---|
+| ![The View in Bank button on a list's Total materials card](viewinbankbutton-totalmaterials.png) | ![A bank showing all list materials followed by labeled upgrade sections](filteredmaterials-totalmaterials.png) |
 
 ## Import a Sailing materials bank tag
 

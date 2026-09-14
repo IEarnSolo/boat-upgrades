@@ -1,5 +1,6 @@
 package com.boatupgrades;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -28,6 +29,56 @@ import net.runelite.client.util.Text;
 @Singleton
 public class BankMaterialViewService
 {
+	private static final class PreparedMaterialView
+	{
+		private final List<Integer> itemIds;
+		private final Map<Integer, String> fallbackTooltips;
+		private final Map<Integer, String> positionTooltips;
+		private final Map<Integer, String> sectionHeaders;
+		private final Map<Integer, SectionRequirement> sectionRequirements;
+
+		private PreparedMaterialView(List<Integer> itemIds, Map<Integer, String> fallbackTooltips,
+			Map<Integer, String> positionTooltips, Map<Integer, String> sectionHeaders,
+			Map<Integer, SectionRequirement> sectionRequirements)
+		{
+			this.itemIds = itemIds;
+			this.fallbackTooltips = fallbackTooltips;
+			this.positionTooltips = positionTooltips;
+			this.sectionHeaders = sectionHeaders;
+			this.sectionRequirements = sectionRequirements;
+		}
+	}
+
+	public static final class SectionRequirement
+	{
+		private final String materialName;
+		private final int requiredQuantity;
+
+		private SectionRequirement(String materialName, int requiredQuantity)
+		{
+			this.materialName = materialName;
+			this.requiredQuantity = requiredQuantity;
+		}
+
+		public String getMaterialName() { return materialName; }
+		public int getRequiredQuantity() { return requiredQuantity; }
+	}
+
+	public static final class MaterialSection
+	{
+		private final String name;
+		private final Map<String, Integer> materialRequirements;
+
+		public MaterialSection(String name, Map<String, Integer> materialRequirements)
+		{
+			this.name = name;
+			this.materialRequirements = Collections.unmodifiableMap(new LinkedHashMap<>(materialRequirements));
+		}
+
+		public String getName() { return name; }
+		public Map<String, Integer> getMaterialRequirements() { return materialRequirements; }
+	}
+
 	public enum Availability
 	{
 		AVAILABLE(null),
@@ -42,6 +93,7 @@ public class BankMaterialViewService
 	private static final String TEMP_TAG = "boat-upgrades-material-view";
 	private static final String LAYOUT_KEY = BankTagsPlugin.TAG_LAYOUT_PREFIX + Text.standardize(TEMP_TAG);
 	private static final String BANK_TAGS_ACTIVE_TAB_KEY = "tab";
+	private static final int BANK_ITEMS_PER_ROW = BankTagsPlugin.BANK_ITEMS_PER_ROW;
 
 	private final Client client;
 	private final ClientThread clientThread;
@@ -54,7 +106,11 @@ public class BankMaterialViewService
 	private volatile String activeViewName;
 	private volatile List<Integer> activeItemIds = Collections.emptyList();
 	private volatile Map<Integer, String> activePlaceholderTooltips = Collections.emptyMap();
+	private volatile Map<Integer, String> activePositionTooltips = Collections.emptyMap();
+	private volatile Map<Integer, String> activeSectionHeaders = Collections.emptyMap();
+	private volatile Map<Integer, SectionRequirement> activeSectionRequirements = Collections.emptyMap();
 	private volatile boolean restoreOnNextBankOpen;
+	private volatile boolean activeTotalMaterialsView;
 
 	@Inject
 	public BankMaterialViewService(Client client, ClientThread clientThread, ConfigManager configManager,
@@ -165,6 +221,10 @@ public class BankMaterialViewService
 		String displayName = activeViewName;
 		List<Integer> itemIds = activeItemIds;
 		Map<Integer, String> placeholderTooltips = activePlaceholderTooltips;
+		Map<Integer, String> positionTooltips = activePositionTooltips;
+		Map<Integer, String> sectionHeaders = activeSectionHeaders;
+		Map<Integer, SectionRequirement> sectionRequirements = activeSectionRequirements;
+		boolean totalMaterialsView = activeTotalMaterialsView;
 		restoreOnNextBankOpen = false;
 		clientThread.invokeLater(() ->
 		{
@@ -175,7 +235,8 @@ public class BankMaterialViewService
 				return;
 			}
 			log.debug("[Bank View] Restoring retained temporary '{}' view after reopening the bank", displayName);
-			openMaterialView(displayName, itemIds, placeholderTooltips);
+			openMaterialView(displayName, itemIds, placeholderTooltips, positionTooltips, sectionHeaders,
+				sectionRequirements, totalMaterialsView);
 		});
 	}
 
@@ -205,7 +266,8 @@ public class BankMaterialViewService
 		return Availability.AVAILABLE;
 	}
 
-	public void viewMaterials(String viewName, Map<String, Integer> materialRequirements)
+	public void viewMaterials(String viewName, Map<String, Integer> materialRequirements,
+		boolean showRequirementProgress)
 	{
 		Collection<String> materialNames = materialRequirements.keySet();
 		List<Integer> itemIds = MaterialItemRegistry.resolveItemIds(materialNames);
@@ -219,21 +281,148 @@ public class BankMaterialViewService
 		}
 
 		Map<Integer, String> placeholderTooltips = new LinkedHashMap<>();
+		Map<Integer, SectionRequirement> sectionRequirements = new LinkedHashMap<>();
+		Set<Integer> positionedItemIds = new LinkedHashSet<>();
 		materialRequirements.forEach((name, quantity) ->
 		{
 			Integer itemId = MaterialItemRegistry.getItemId(name);
 			if (itemId != null)
 			{
 				placeholderTooltips.put(itemId, quantity + " x " + JagexColors.MENU_TARGET_TAG + name + "</col>");
+				if (showRequirementProgress && positionedItemIds.add(itemId))
+				{
+					sectionRequirements.put(sectionRequirements.size(), new SectionRequirement(name, quantity));
+				}
 				log.debug("[Bank View] Prepared orange item-name tooltip for {} x {}", quantity, name);
 			}
 		});
 
 		String displayName = normalizeViewName(viewName);
-		clientThread.invoke(() -> openMaterialView(displayName, itemIds, placeholderTooltips));
+		log.debug("[Bank View] Prepared {} individual-upgrade requirement progress positions for '{}'",
+			sectionRequirements.size(), displayName);
+		clientThread.invoke(() -> openMaterialView(displayName, itemIds, placeholderTooltips,
+			Collections.emptyMap(), Collections.emptyMap(), sectionRequirements, false));
 	}
 
-	private void openMaterialView(String displayName, List<Integer> itemIds, Map<Integer, String> placeholderTooltips)
+	public void viewMaterialSections(String viewName, Map<String, Integer> totalRequirements,
+		List<MaterialSection> sections)
+	{
+		PreparedMaterialView prepared = prepareMaterialSections(totalRequirements, sections);
+		List<String> recognizedNames = totalRequirements.keySet().stream()
+			.filter(name -> MaterialItemRegistry.getItemId(name) != null).collect(java.util.stream.Collectors.toList());
+		Availability availability = getAvailability(recognizedNames);
+		if (availability != Availability.AVAILABLE)
+		{
+			log.debug("[Bank View] Rejected sectioned material view request: {}", availability);
+			return;
+		}
+
+		String displayName = normalizeViewName(viewName);
+		log.debug("[Bank View] Prepared total-material layout with {} aggregate items and {} upgrade sections",
+			recognizedNames.size(), prepared.sectionHeaders.size());
+		clientThread.invoke(() -> openMaterialView(displayName, prepared.itemIds, prepared.fallbackTooltips,
+			prepared.positionTooltips, prepared.sectionHeaders, prepared.sectionRequirements, true));
+	}
+
+	private PreparedMaterialView prepareMaterialSections(Map<String, Integer> totalRequirements,
+		List<MaterialSection> sections)
+	{
+		List<Integer> layout = new ArrayList<>();
+		Map<Integer, String> sectionHeaders = new LinkedHashMap<>();
+		Map<Integer, String> positionTooltips = new LinkedHashMap<>();
+		Map<Integer, String> fallbackTooltips = new LinkedHashMap<>();
+		Map<Integer, SectionRequirement> sectionRequirements = new LinkedHashMap<>();
+
+		sectionHeaders.put(0, "All materials");
+		for (int i = 0; i < BANK_ITEMS_PER_ROW; i++) layout.add(-1);
+		appendMaterials(layout, totalRequirements, positionTooltips, fallbackTooltips, null);
+		log.debug("[Bank View] Added the All materials header to the aggregate material section");
+		for (MaterialSection section : sections)
+		{
+			while (layout.size() % BANK_ITEMS_PER_ROW != 0) layout.add(-1);
+			int headerSlot = layout.size();
+			sectionHeaders.put(headerSlot, section.getName());
+			for (int i = 0; i < BANK_ITEMS_PER_ROW; i++) layout.add(-1);
+			appendMaterials(layout, section.getMaterialRequirements(), positionTooltips, fallbackTooltips,
+				sectionRequirements);
+		}
+
+		log.debug("[Bank View] Prepared {} per-upgrade material requirement positions", sectionRequirements.size());
+		return new PreparedMaterialView(layout, fallbackTooltips, positionTooltips, sectionHeaders,
+			sectionRequirements);
+	}
+
+	public void refreshActiveTotalMaterialsView(String viewName, Map<String, Integer> totalRequirements,
+		List<MaterialSection> sections)
+	{
+		if (!activeTotalMaterialsView)
+		{
+			return;
+		}
+
+		PreparedMaterialView prepared = prepareMaterialSections(totalRequirements, sections);
+		if (MaterialItemRegistry.resolveItemIds(totalRequirements.keySet()).isEmpty())
+		{
+			log.debug("[Bank View] Closing active total-material view because the active list has no materials");
+			closeActiveTotalMaterialsView();
+			return;
+		}
+
+		String displayName = normalizeViewName(viewName);
+		if (!bankOpen)
+		{
+			if (restoreOnNextBankOpen && config.keepTemporaryBankView())
+			{
+				storeActiveView(displayName, prepared.itemIds, prepared.fallbackTooltips,
+					prepared.positionTooltips, prepared.sectionHeaders, prepared.sectionRequirements, true);
+				restoreOnNextBankOpen = true;
+				log.debug("[Bank View] Rebuilt retained total-material view '{}' while the bank was closed", displayName);
+			}
+			return;
+		}
+
+		clientThread.invokeLater(() ->
+		{
+			BankTagsPlugin plugin = bankTagsPlugin;
+			if (plugin == null || !pluginManager.isPluginActive(plugin) || !TEMP_TAG.equals(plugin.getActiveTag()))
+			{
+				log.debug("[Bank View] Stopped tracking the total-material view because the player left the temporary tab");
+				clearTemporaryState();
+				return;
+			}
+			openMaterialView(displayName, prepared.itemIds, prepared.fallbackTooltips,
+				prepared.positionTooltips, prepared.sectionHeaders, prepared.sectionRequirements, true);
+			log.debug("[Bank View] Refreshed open total-material view '{}' after list requirements changed", displayName);
+		});
+	}
+
+	private void appendMaterials(List<Integer> layout, Map<String, Integer> requirements,
+		Map<Integer, String> positionTooltips, Map<Integer, String> fallbackTooltips,
+		Map<Integer, SectionRequirement> sectionRequirements)
+	{
+		for (Map.Entry<String, Integer> requirement : requirements.entrySet())
+		{
+			Integer itemId = MaterialItemRegistry.getItemId(requirement.getKey());
+			if (itemId == null)
+			{
+				log.debug("[Bank View] Skipping unmapped section material '{}'", requirement.getKey());
+				continue;
+			}
+			String tooltip = requirement.getValue() + " x " + JagexColors.MENU_TARGET_TAG
+				+ requirement.getKey() + "</col>";
+			positionTooltips.put(layout.size(), tooltip);
+			if (sectionRequirements != null)
+			{
+				sectionRequirements.put(layout.size(), new SectionRequirement(requirement.getKey(), requirement.getValue()));
+			}
+			fallbackTooltips.put(itemId, tooltip);
+			layout.add(itemId);
+		}
+	}
+
+	private void openMaterialView(String displayName, List<Integer> itemIds, Map<Integer, String> placeholderTooltips,
+		Map<Integer, String> positionTooltips, Map<Integer, String> sectionHeaders,
+		Map<Integer, SectionRequirement> sectionRequirements, boolean totalMaterialsView)
 	{
 		BankTagsPlugin plugin = bankTagsPlugin;
 		Widget bank = client.getWidget(InterfaceID.Bankmain.ITEMS);
@@ -253,9 +442,8 @@ public class BankMaterialViewService
 		{
 			tagManager.registerTag(TEMP_TAG, itemId -> acceptedIds.contains(itemManager.canonicalize(itemId)));
 			configManager.setConfiguration(BankTagsPlugin.CONFIG_GROUP, LAYOUT_KEY, layout);
-			activeViewName = displayName;
-			activeItemIds = Collections.unmodifiableList(new java.util.ArrayList<>(itemIds));
-			activePlaceholderTooltips = Collections.unmodifiableMap(canonicalTooltips);
+			storeActiveView(displayName, itemIds, canonicalTooltips, positionTooltips, sectionHeaders,
+				sectionRequirements, totalMaterialsView);
 			restoreOnNextBankOpen = false;
 			plugin.openBankTag(TEMP_TAG, BankTagsService.OPTION_HIDE_TAG_NAME);
 			applyFriendlyBankTitle();
@@ -276,14 +464,69 @@ public class BankMaterialViewService
 		}
 	}
 
-	public String getFakePlaceholderTooltip(int itemId)
+	private void storeActiveView(String displayName, List<Integer> itemIds, Map<Integer, String> placeholderTooltips,
+		Map<Integer, String> positionTooltips, Map<Integer, String> sectionHeaders,
+		Map<Integer, SectionRequirement> sectionRequirements, boolean totalMaterialsView)
+	{
+		Map<Integer, String> canonicalTooltips = new LinkedHashMap<>();
+		placeholderTooltips.forEach((itemId, tooltip) -> canonicalTooltips.put(itemManager.canonicalize(itemId), tooltip));
+		activeViewName = displayName;
+		activeItemIds = Collections.unmodifiableList(new ArrayList<>(itemIds));
+		activePlaceholderTooltips = Collections.unmodifiableMap(canonicalTooltips);
+		activePositionTooltips = Collections.unmodifiableMap(new LinkedHashMap<>(positionTooltips));
+		activeSectionHeaders = Collections.unmodifiableMap(new LinkedHashMap<>(sectionHeaders));
+		activeSectionRequirements = Collections.unmodifiableMap(new LinkedHashMap<>(sectionRequirements));
+		activeTotalMaterialsView = totalMaterialsView;
+	}
+
+	private void closeActiveTotalMaterialsView()
+	{
+		BankTagsPlugin plugin = bankTagsPlugin;
+		clearRememberedTemporaryTab();
+		clearTemporaryState();
+		if (bankOpen && plugin != null && pluginManager.isPluginActive(plugin))
+		{
+			clientThread.invokeLater(() ->
+			{
+				if (pluginManager.isPluginActive(plugin) && TEMP_TAG.equals(plugin.getActiveTag()))
+				{
+					plugin.closeBankTag();
+					log.debug("[Bank View] Exited the empty total-material temporary bank view");
+				}
+			});
+		}
+	}
+
+	public String getFakePlaceholderTooltip(int itemId, int layoutPosition)
 	{
 		BankTagsPlugin plugin = bankTagsPlugin;
 		if (plugin == null || activeViewName == null || !TEMP_TAG.equals(plugin.getActiveTag()))
 		{
 			return null;
 		}
-		return activePlaceholderTooltips.get(itemManager.canonicalize(itemId));
+		String positioned = activePositionTooltips.get(layoutPosition);
+		return positioned != null ? positioned : activePlaceholderTooltips.get(itemManager.canonicalize(itemId));
+	}
+
+	public Map<Integer, String> getActiveSectionHeaders()
+	{
+		BankTagsPlugin plugin = bankTagsPlugin;
+		if (plugin == null || activeViewName == null || !TEMP_TAG.equals(plugin.getActiveTag()))
+		{
+			return Collections.emptyMap();
+		}
+		return activeSectionHeaders;
+	}
+
+	public SectionRequirement getActiveSectionRequirement(int layoutPosition)
+	{
+		BankTagsPlugin plugin = bankTagsPlugin;
+		if (plugin == null || activeViewName == null
+			|| !TEMP_TAG.equals(plugin.getActiveTag()))
+		{
+			return null;
+		}
+		return activeSectionRequirements.get(layoutPosition);
 	}
 
 	public void applyFriendlyBankTitle()
@@ -310,7 +553,11 @@ public class BankMaterialViewService
 		activeViewName = null;
 		activeItemIds = Collections.emptyList();
 		activePlaceholderTooltips = Collections.emptyMap();
+		activePositionTooltips = Collections.emptyMap();
+		activeSectionHeaders = Collections.emptyMap();
+		activeSectionRequirements = Collections.emptyMap();
 		restoreOnNextBankOpen = false;
+		activeTotalMaterialsView = false;
 	}
 
 	private void clearRememberedTemporaryTab()

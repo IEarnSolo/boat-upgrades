@@ -236,6 +236,7 @@ public class BoatUpgradesPanel extends PluginPanel
                 log.debug("[Lists] Switched active list from selector to {}", selected.getId());
                 refreshSelected();
                 updateCatalogActionButtons();
+                refreshActiveTotalMaterialsBankView();
             }
         });
         listMenuButton = new JButton("⋮");
@@ -407,8 +408,6 @@ public class BoatUpgradesPanel extends PluginPanel
         MyUpgradeListService.ListSummary active = lists.getActiveList();
         if (active == null) return;
         String contents = active.getUpgradeCount() + (active.getUpgradeCount() == 1 ? " upgrade" : " upgrades");
-        if (active.getUpgradeCount() != active.getDistinctUpgradeCount())
-            contents += " across " + active.getDistinctUpgradeCount() + (active.getDistinctUpgradeCount() == 1 ? " type" : " types");
         String message = "Delete list '" + active.getName() + "' and its " + contents + "?\n\nThis cannot be undone.";
         int result = JOptionPane.showConfirmDialog(this, message, "Delete upgrade list", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (result != JOptionPane.YES_OPTION) { log.debug("[Lists] User cancelled deletion of list {}", active.getId()); return; }
@@ -440,6 +439,7 @@ public class BoatUpgradesPanel extends PluginPanel
         if (catalogListNotice != null) catalogListNotice.setVisible(active == null);
         updatingListSelector = false;
         log.debug("[Lists] Updated list selector with {} lists; active={}", listSelector.getItemCount(), activeId);
+        refreshActiveTotalMaterialsBankView();
     }
 
     private JButton modeButton(String text, String mode)
@@ -574,8 +574,34 @@ public class BoatUpgradesPanel extends PluginPanel
         for (Map.Entry<String, Integer> entry : totals.entrySet()) { JLabel label = materialLabel(nf.format(entry.getValue()) + " x " + entry.getKey(), entry.getKey(), entry.getValue()); clickable(label, entry.getKey()); panel.add(label); }
         MyUpgradeListService.ListSummary activeList = lists.getActiveList();
         String viewName = (activeList == null ? "Upgrade list" : activeList.getName()) + " total materials";
-        panel.add(Box.createVerticalStrut(5)); panel.add(viewInBankButton(viewName, totals));
+        List<BankMaterialViewService.MaterialSection> sections = buildTotalMaterialSections();
+        panel.add(Box.createVerticalStrut(5)); panel.add(viewInBankButton(viewName, totals, sections));
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height)); return panel;
+    }
+
+    private List<BankMaterialViewService.MaterialSection> buildTotalMaterialSections()
+    {
+        List<BankMaterialViewService.MaterialSection> sections = new ArrayList<>();
+        for (MyUpgradeListService.SelectedUpgrade selected : lists.getSelectedUpgrades())
+        {
+            UpgradeData.UpgradeOption option = selected.getOption();
+            Map<String, Integer> requirements = new LinkedHashMap<>();
+            option.materials.forEach(material -> requirements.merge(material.name,
+                material.qty * selected.getQuantity(), Integer::sum));
+            String sectionName = option.displayName;
+            if (option.boatType >= 0) sectionName += " (" + boatName(option) + ")";
+            if (selected.getQuantity() > 1) sectionName += " x" + selected.getQuantity();
+            sections.add(new BankMaterialViewService.MaterialSection(sectionName, requirements));
+        }
+        return sections;
+    }
+
+    private void refreshActiveTotalMaterialsBankView()
+    {
+        MyUpgradeListService.ListSummary activeList = lists.getActiveList();
+        String viewName = (activeList == null ? "Upgrade list" : activeList.getName()) + " total materials";
+        bankMaterialViewService.refreshActiveTotalMaterialsView(viewName, lists.getMaterialTotals(),
+            buildTotalMaterialSections());
     }
 
     private void refreshCatalog()
@@ -656,7 +682,8 @@ public class BoatUpgradesPanel extends PluginPanel
         actions.setBorder(new EmptyBorder(5, 0, 0, 0));
         Map<String, Integer> materialRequirements = new LinkedHashMap<>();
         o.materials.forEach(material -> materialRequirements.merge(material.name, material.qty * requirementMultiplier, Integer::sum));
-        JButton viewInBankButton = viewInBankButton(o.displayName + " materials", materialRequirements);
+        JButton viewInBankButton = viewInBankButton(individualBankViewName(o), materialRequirements,
+            true);
         if ("Quantity".equals(action))
         {
             JButton minus = quantityButton("−"), plus = quantityButton("+");
@@ -732,9 +759,24 @@ public class BoatUpgradesPanel extends PluginPanel
         return button;
     }
 
-    private JButton viewInBankButton(String viewName, Map<String, Integer> materialRequirements)
+    private JButton viewInBankButton(String viewName, Map<String, Integer> materialRequirements,
+        boolean showRequirementProgress)
+    {
+        return viewInBankButton(viewName, materialRequirements, null, showRequirementProgress);
+    }
+
+    private JButton viewInBankButton(String viewName, Map<String, Integer> materialRequirements,
+        List<BankMaterialViewService.MaterialSection> sections)
+    {
+        return viewInBankButton(viewName, materialRequirements, sections, true);
+    }
+
+    private JButton viewInBankButton(String viewName, Map<String, Integer> materialRequirements,
+        List<BankMaterialViewService.MaterialSection> sections, boolean showRequirementProgress)
     {
         Map<String, Integer> requirements = Collections.unmodifiableMap(new LinkedHashMap<>(materialRequirements));
+        List<BankMaterialViewService.MaterialSection> immutableSections = sections == null
+            ? null : Collections.unmodifiableList(new ArrayList<>(sections));
         Collection<String> names = requirements.keySet();
         JButton button = new JButton("View in Bank");
         button.setFont(FontManager.getRunescapeSmallFont());
@@ -745,7 +787,9 @@ public class BoatUpgradesPanel extends PluginPanel
         button.addActionListener(e ->
         {
             log.debug("[Bank View] Side-panel action requested '{}' for {} material requirements", viewName, requirements.size());
-            bankMaterialViewService.viewMaterials(viewName, requirements);
+            if (immutableSections == null) bankMaterialViewService.viewMaterials(viewName, requirements,
+                showRequirementProgress);
+            else bankMaterialViewService.viewMaterialSections(viewName, requirements, immutableSections);
         });
         return button;
     }
@@ -757,6 +801,16 @@ public class BoatUpgradesPanel extends PluginPanel
     }
 
     private String boatName(UpgradeData.UpgradeOption o) { return o.boatType == 0 ? "Raft" : o.boatType == 1 ? "Skiff" : o.boatType == 2 ? "Sloop" : "All supported boats"; }
+
+    private String individualBankViewName(UpgradeData.UpgradeOption option)
+    {
+        String boatVariant = option.boatType >= 0
+            ? " (" + boatName(option).toLowerCase(Locale.ROOT) + ")"
+            : "";
+        String viewName = option.displayName + boatVariant + " materials";
+        log.debug("[Bank View] Built individual material-view title '{}' for {}", viewName, option.getStableId());
+        return viewName;
+    }
 
     private ImageIcon icon(UpgradeData.UpgradeOption o)
     {
