@@ -337,8 +337,8 @@ public interface BoatUpgradesConfig extends Config
 	@ConfigItem(
 			keyName = "lastSeenChangelogVersion",
 			name = "lastSeenChangelogVersion",
-			description = ""//,
-			//hidden = true
+			description = "",
+			hidden = true
 			//position = 800
 	)
 	default String lastSeenChangelogVersion()
