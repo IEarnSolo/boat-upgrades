@@ -37,7 +37,7 @@ public class SailingMaterialsBankTagService
 	private static final String BASE_TAG = "sailing-materials";
 	private static final int TAB_ICON_ITEM_ID = ItemID.ROSEWOOD_MAST_AND_COTTON_SAILS;
 	private static final int ITEMS_PER_ROW = 8;
-	private static final int EXPECTED_MATERIAL_COUNT = 87;
+	private static final int EXPECTED_MATERIAL_COUNT = 89;
 
 	private static final String[][] LAYOUT_ROWS =
 	{
@@ -54,12 +54,13 @@ public class SailingMaterialsBankTagService
 		{},
 		{"Bolt of linen", "Bolt of canvas", "Bolt of cotton", "Linen yarn", "Hemp yarn", "Cotton yarn", "Rope"},
 		{},
-		{"Swamp tar", "Molten glass", "Charcoal", "Tinderbox", "Barrel stand"},
-		{"Air rune", "Captured wind mote", "Bottled storm", "Swift albatross feather", "Magic stone", "Heart of ithell", "Echo pearl"},
-		{"Fishing bait", "Knife", "Narwhal horn knife", "Ray barbs"},
+		{"Tinderbox", "Charcoal", "Molten glass", "Swamp tar", "Magic stone"},
+		{"Air rune", "Water rune", "Law rune"},
+		{"Bottled storm", "Echo pearl", "Swift albatross feather"},
+		{"Barrel stand", "Captured wind mote", "Heart of ithell"},
+		{"Knife", "Narwhal horn knife", "Fishing bait", "Ray barbs"},
 		{"Te salt", "Efh salt", "Urt salt", "Relicym's balm(4)"}
 	};
-
 	private final Client client;
 	private final ClientThread clientThread;
 	private final ConfigManager configManager;
@@ -178,6 +179,11 @@ public class SailingMaterialsBankTagService
 			for (int column = 0; column < LAYOUT_ROWS[row].length; column++)
 			{
 				String materialName = LAYOUT_ROWS[row][column];
+				if (materialName == null)
+				{
+					log.debug("[Sailing Tag] Preserved empty layout slot at row {}, column {}", row + 1, column + 1);
+					continue;
+				}
 				if (!layoutNames.add(materialName)) duplicateNames.add(materialName);
 				Integer itemId = MaterialItemRegistry.getItemId(materialName);
 				if (itemId == null) unmappedNames.add(materialName);

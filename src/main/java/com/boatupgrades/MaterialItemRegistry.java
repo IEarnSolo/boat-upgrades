@@ -36,6 +36,7 @@ final class MaterialItemRegistry
 		ids.put("Iron keel parts", ItemID.IRON_KEEL_PARTS); ids.put("Iron nails", ItemID.IRON_NAILS);
 		ids.put("Ironwood hull parts", ItemID.IRONWOOD_HULL_PARTS); ids.put("Ironwood logs", ItemID.IRONWOOD_LOGS);
 		ids.put("Ironwood plank", ItemID.IRONWOOD_PLANK); ids.put("Knife", ItemID.KNIFE);
+		ids.put("Law rune", ItemID.LAW_RUNE);
 		ids.put("Large adamant keel parts", ItemID.LARGE_ADAMANT_KEEL_PARTS); ids.put("Large bronze keel parts", ItemID.LARGE_BRONZE_KEEL_PARTS);
 		ids.put("Large camphor hull parts", ItemID.LARGE_CAMPHOR_HULL_PARTS); ids.put("Large dragon keel parts", ItemID.LARGE_DRAGON_KEEL_PARTS);
 		ids.put("Large iron keel parts", ItemID.LARGE_IRON_KEEL_PARTS); ids.put("Large ironwood hull parts", ItemID.LARGE_IRONWOOD_HULL_PARTS);
@@ -44,7 +45,7 @@ final class MaterialItemRegistry
 		ids.put("Large rune keel parts", ItemID.LARGE_RUNE_KEEL_PARTS); ids.put("Large steel keel parts", ItemID.LARGE_STEEL_KEEL_PARTS);
 		ids.put("Large teak hull parts", ItemID.LARGE_TEAK_HULL_PARTS); ids.put("Large wooden hull parts", ItemID.LARGE_WOODEN_HULL_PARTS);
 		ids.put("Lead bar", ItemID.LEAD_BAR); ids.put("Linen yarn", ItemID.LINEN_YARN); ids.put("Logs", ItemID.LOGS);
-		ids.put("Magic stone", ItemID.MAGIC_STONE); ids.put("Mahogany hull parts", ItemID.MAHOGANY_HULL_PARTS);
+		ids.put("Magic stone", ItemID.MAGIC_STONE_8788); ids.put("Mahogany hull parts", ItemID.MAHOGANY_HULL_PARTS);
 		ids.put("Mahogany logs", ItemID.MAHOGANY_LOGS); ids.put("Mahogany plank", ItemID.MAHOGANY_PLANK);
 		ids.put("Mithril bar", ItemID.MITHRIL_BAR); ids.put("Mithril keel parts", ItemID.MITHRIL_KEEL_PARTS);
 		ids.put("Mithril nails", ItemID.MITHRIL_NAILS); ids.put("Molten glass", ItemID.MOLTEN_GLASS);
@@ -60,6 +61,7 @@ final class MaterialItemRegistry
 		ids.put("Te salt", ItemID.TE_SALT); ids.put("Teak hull parts", ItemID.TEAK_HULL_PARTS);
 		ids.put("Teak logs", ItemID.TEAK_LOGS); ids.put("Teak plank", ItemID.TEAK_PLANK);
 		ids.put("Tinderbox", ItemID.TINDERBOX); ids.put("Urt salt", ItemID.URT_SALT);
+		ids.put("Water rune", ItemID.WATER_RUNE);
 		ids.put("Wooden hull parts", ItemID.WOODEN_HULL_PARTS);
 		ITEM_IDS = Collections.unmodifiableMap(ids);
 	}

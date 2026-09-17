@@ -128,6 +128,8 @@ public class UpgradeVisibilityUtils
             case "Salvaging Station": return config.showSalvagingStation();
             case "Crystal Extractor": return config.showCrystalExtractor();
             case "Eternal Brazier": return config.showEternalBrazier();
+            case "Ballistic Attractor": return config.showBallisticAttractor();
+            case "Bosun's Workbench": return config.showBosunsWorkbench();
             default: return true;
         }
     }

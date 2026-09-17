@@ -33,7 +33,9 @@ public class SchematicUtils
             new SchematicEntry("Eternal brazier schematic", "Eternal brazier", VarbitID.LOST_SCHEMATIC_ETERNAL_BRAZIER),
             new SchematicEntry("Dragon cannon schematic", "Dragon cannon", VarbitID.LOST_SCHEMATIC_DRAGON_CANNON),
             new SchematicEntry("Rosewood & cotton sails schematic", "Rosewood mast & cotton sails", VarbitID.LOST_SCHEMATIC_ROSEWOOD_SAIL),
-            new SchematicEntry("Dragon keel schematic", "Dragon keel", VarbitID.LOST_SCHEMATIC_DRAGON_KEEL)
+            new SchematicEntry("Dragon keel schematic", "Dragon keel", VarbitID.LOST_SCHEMATIC_DRAGON_KEEL),
+            new SchematicEntry("Ballistic attractor schematic", "Ballistic attractor", VarbitID.LOST_SCHEMATIC_BALLISTIC_ATTRACTOR),
+            new SchematicEntry("Bosun's workbench schematic", "Bosun's workbench", VarbitID.LOST_SCHEMATIC_BOSUNS_WORKBENCH)
     );
 
     public boolean hasSchematic(String upgradeName)

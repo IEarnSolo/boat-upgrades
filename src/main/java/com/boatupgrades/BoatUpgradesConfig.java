@@ -324,6 +324,22 @@ public interface BoatUpgradesConfig extends Config
 	default boolean showEternalBrazier() { return false; }
 
 	@ConfigItem(
+			keyName = "showBallisticAttractor",
+			name = "Ballistic attractor",
+			description = "Show the Ballistic attractor facility in the overlay",
+			section = facilitiesSection
+	)
+	default boolean showBallisticAttractor() { return false; }
+
+	@ConfigItem(
+			keyName = "showBosunsWorkbench",
+			name = "Bosun's workbench",
+			description = "Show the Bosun's workbench facility in the overlay",
+			section = facilitiesSection
+	)
+	default boolean showBosunsWorkbench() { return false; }
+
+	@ConfigItem(
 			keyName = "comingSoon",
 			name = "Schematic checks under development",
 			description = "Schematic checks for text overlay under development",

@@ -74,7 +74,7 @@ The Total materials view begins with an alphabetical **All materials** aggregate
 
 ## Import a Sailing materials bank tag
 
-Boat Upgrades can also create a permanent, editable Bank Tags layout containing all 87 supported upgrade materials.
+Boat Upgrades can also create a permanent, editable Bank Tags layout containing all 89 supported upgrade materials.
 
 With the bank open, right-click the Bank Tags new-tab button and choose **Import tag tab Boat Upgrades**. The plugin creates a `sailing-materials` tab organized into eight-column sections for logs, planks, hull parts, metals, nails, keel parts, textiles, facility components, and other specialist materials. Intentional blank rows keep each group easy to scan.
 

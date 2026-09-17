@@ -68,6 +68,6 @@ public class BankMaterialRequirementOverlay extends WidgetItemOverlay
 
 	private static String formatQuantity(int quantity)
 	{
-		return quantity >= 1_000 ? quantity / 1_000 + "k" : String.valueOf(quantity);
+		return quantity >= 1_000 ? quantity / 1_000 + "K" : String.valueOf(quantity);
 	}
 }

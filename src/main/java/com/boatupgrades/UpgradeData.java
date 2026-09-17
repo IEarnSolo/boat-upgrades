@@ -1,7 +1,9 @@
 package com.boatupgrades;
 
 import java.util.*;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public final class UpgradeData
 {
     private UpgradeData() {}
@@ -59,7 +61,9 @@ public final class UpgradeData
             "Anchor",
             "Fathom Device",
             "Salvaging Station",
-            "Crystal Extractor"
+            "Crystal Extractor",
+            "Ballistic Attractor",
+            "Bosun's Workbench"
     );
 
     static
@@ -379,6 +383,11 @@ public final class UpgradeData
                 Arrays.asList(new Material("Ironwood plank",6), new Material("Cupronickel bar",5), new Material("Magic stone",2), new Material("Heart of ithell",1))));
         OPTIONS.add(new UpgradeOption("Eternal Brazier", -1, 0, 78, 72, "Eternal brazier",
                 Arrays.asList(new Material("Ironwood plank",4), new Material("Rune nails",16), new Material("Runite bar",6), new Material("Cupronickel bar",6), new Material("Te salt",250), new Material("Efh salt",250), new Material("Urt salt",250))));
+        OPTIONS.add(new UpgradeOption("Ballistic Attractor", -1, 0, 50, 44, "Ballistic attractor",
+                Arrays.asList(new Material("Mahogany plank",10), new Material("Water rune",5000), new Material("Law rune",1000), new Material("Lead bar",5), new Material("Steel bar",5))));
+        OPTIONS.add(new UpgradeOption("Bosun's Workbench", -1, 0, 63, 54, "Bosun's workbench",
+                Arrays.asList(new Material("Camphor plank",6), new Material("Adamantite nails",24), new Material("Lead bar",5))));
+        log.debug("[Catalog] Registered Ballistic attractor and Bosun's workbench facility upgrades");
     }
 
     public static List<UpgradeOption> getAllOptions()

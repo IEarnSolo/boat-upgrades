@@ -53,7 +53,9 @@ public class FacilityService
                 "Inoculation Station",
                 "Salvaging Station",
                 "Crystal Extractor",
-                "Eternal Brazier"
+                "Eternal Brazier",
+                "Ballistic Attractor",
+                "Bosun's Workbench"
         );
         for (String f : facilities)
         {
@@ -161,6 +163,18 @@ public class FacilityService
 
             if (ETERNAL_BRAZIER.contains(id)) {
                 updateHighest("Eternal Brazier", 0);
+                return;
+            }
+
+            if (BALLISTIC_ATTRACTOR.contains(id)) {
+                updateHighest("Ballistic Attractor", 0);
+                log.debug("[Facilities] Detected installed Ballistic attractor object {}", id);
+                return;
+            }
+
+            if (BOSUNS_WORKBENCH.contains(id)) {
+                updateHighest("Bosun's Workbench", 0);
+                log.debug("[Facilities] Detected installed Bosun's workbench object {}", id);
             }
         }
         catch (Throwable t)
@@ -668,5 +682,17 @@ public class FacilityService
             ObjectID.SAILING_BOAT_SKIFF_ETERNAL_BRAZIER,
             ObjectID.SAILING_BOAT_SLOOP_ETERNAL_BRAZIER,
             ObjectID.SAILING_BOAT_ETERNAL_BRAZIER_UI
+    );
+    private static final Set<Integer> BALLISTIC_ATTRACTOR = Set.of(
+            ObjectID.SAILING_BALLISTIC_ATTRACTOR
+    );
+    private static final Set<Integer> BOSUNS_WORKBENCH = Set.of(
+            ObjectID.SAILING_BOSUNS_WORKBENCH_NORMAL,
+            ObjectID.SAILING_BOSUNS_WORKBENCH_OAK,
+            ObjectID.SAILING_BOSUNS_WORKBENCH_TEAK,
+            ObjectID.SAILING_BOSUNS_WORKBENCH_MAHOGANY,
+            ObjectID.SAILING_BOSUNS_WORKBENCH_CAMPHOR,
+            ObjectID.SAILING_BOSUNS_WORKBENCH_IRONWOOD,
+            ObjectID.SAILING_BOSUNS_WORKBENCH_ROSEWOOD
     );
 }
